@@ -41,12 +41,8 @@ export class Config {
     return Config.instance;
   }
 
-  static resetForTests(): void {
-    Config.instance = null;
-  }
-
-  get isProduction(): boolean {
-    return this.nodeEnv === 'production';
+  static fromEnvForTesting(env: NodeJS.ProcessEnv): Config {
+    return new Config(env);
   }
 
   private static required(name: string, value: string | undefined): string {
