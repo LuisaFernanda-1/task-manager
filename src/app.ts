@@ -10,6 +10,7 @@ import type { Config } from './config/env';
 import { AuthController } from './controllers/auth.controller';
 import { TaskController } from './controllers/task.controller';
 import { openApiSpec } from './docs/openapi';
+import { swaggerUiOptions } from './docs/swagger-ui';
 import { PgTaskRepository } from './persistence/task.repository';
 import { PgUserRepository } from './persistence/user.repository';
 import { AuthService } from './services/auth.service';
@@ -36,7 +37,7 @@ export function createApp({ config, pool }: AppDependencies): Express {
   app.disable('x-powered-by');
 
   // swagger ui necesita scripts y estilos inline
-  app.use('/docs', helmet({ contentSecurityPolicy: false }), swaggerUi.serve, swaggerUi.setup(openApiSpec));
+  app.use('/docs', helmet({ contentSecurityPolicy: false }), swaggerUi.serve, swaggerUi.setup(openApiSpec, swaggerUiOptions));
   app.get('/docs.json', (_req, res) => {
     res.json(openApiSpec);
   });

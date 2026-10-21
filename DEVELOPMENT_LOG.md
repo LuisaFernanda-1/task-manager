@@ -56,6 +56,28 @@
 
 ✍️ **COMPLETAR:** describe las verificaciones que hagas tú (por ejemplo, probar el flujo completo en Swagger o en Postman).
 
+### Uso 2 — Tema visual y usabilidad de Swagger UI
+
+**Prompt utilizado:**
+
+> Quiero mejorar la estética de la documentación Swagger UI que se sirve en /docs, sin cambiar nada del comportamiento de la API. (1) Un tema visual personalizado, moderno y limpio: paleta en tonos morado/lavanda, tipografía legible, bordes redondeados, buen espaciado y colores distintos y suaves para cada método HTTP. (2) Ocultar la barra superior verde de Swagger y mostrar un encabezado propio con el nombre "Task Manager API" y una línea corta de descripción. (3) Que se vea bien en modo claro y oscuro (prefers-color-scheme). (4) Título de la pestaña: "Task Manager API · Docs". (5) swaggerOptions: persistAuthorization, displayRequestDuration, docExpansion: "list", filter y tryItOutEnabled. Restricciones: no modificar rutas, controladores, servicios, repositorios, validaciones ni respuestas; CSS y opciones en un archivo nuevo `src/docs/swagger-ui.ts`; nada cargado de internet; ejecutar typecheck y tests; commit atómico y entrada en esta bitácora.
+
+**Qué se cambió:**
+
+- **Nuevo `src/docs/swagger-ui.ts`** con dos exportaciones: `swaggerCustomCss` (el tema) y `swaggerUiOptions` (título de la pestaña, CSS y `swaggerOptions`).
+- **Tema con variables CSS** en `:root`, redefinidas dentro de `@media (prefers-color-scheme: dark)`: así el modo oscuro solo cambia valores, no reglas. Colores suaves por método: GET azul, POST verde, PUT ámbar, PATCH violeta, DELETE rosa.
+- **Fuentes del sistema** (`system-ui`, `Segoe UI`, `Roboto`…) en lugar de fuentes web: no hay peticiones externas y la página no depende de internet.
+- **Encabezado propio solo con CSS:** se oculta `.topbar` y el título y la descripción se dibujan con pseudo-elementos `::before`. Se descartó inyectar JavaScript (`customJsStr`) porque no hacía falta.
+- **`src/app.ts`:** el único cambio es pasar `swaggerUiOptions` a `swaggerUi.setup(...)`. Rutas, controladores, servicios y respuestas no se tocaron.
+
+**Verificación realizada:**
+
+1. `npm run typecheck` sin errores.
+2. `npm test`: 61 pruebas en verde (6 archivos).
+3. Petición a `/docs/` con supertest: responde 200, el `<title>` es "Task Manager API · Docs", el CSS va en línea y no hay URLs externas (solo los namespaces SVG que trae Swagger). En `/docs/swagger-ui-init.js` aparecen las cinco opciones con sus valores.
+
+✍️ **COMPLETAR:** abre `/docs` en el navegador en modo claro y oscuro y anota aquí lo que ajustes del tema.
+
 ---
 
 ## Decisiones sin asistencia de IA
