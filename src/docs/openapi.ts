@@ -30,6 +30,11 @@ const taskIdParam = {
   schema: { type: 'string', format: 'uuid' },
 };
 
+/**
+ * Especificación OpenAPI 3.0 de la API, servida por Swagger UI en `/docs`
+ * y como JSON en `/docs.json`. Reutiliza las constantes del código
+ * (estados, límites de contraseña) para que la documentación no se desactualice.
+ */
 export const openApiSpec = {
   openapi: '3.0.3',
   info: {

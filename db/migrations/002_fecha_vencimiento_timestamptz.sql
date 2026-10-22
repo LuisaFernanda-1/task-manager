@@ -1,5 +1,11 @@
 -- 002: fecha_vencimiento pasa de DATE a TIMESTAMPTZ.
--- Las fechas existentes quedan al final de ese día en hora de Colombia.
+--
+-- Por qué: una entrega tiene hora, no solo día. Con TIMESTAMPTZ el cliente envía
+-- el momento con su zona horaria y PostgreSQL lo guarda como un instante único,
+-- así "vencida" (fecha_vencimiento < NOW()) es correcta en cualquier país.
+--
+-- Las fechas existentes no tenían hora: se conservan como el final de ese día
+-- (23:59:59) en hora de Colombia, para que ninguna tarea quede vencida antes de tiempo.
 
 ALTER TABLE tareas
   ALTER COLUMN fecha_vencimiento TYPE TIMESTAMPTZ

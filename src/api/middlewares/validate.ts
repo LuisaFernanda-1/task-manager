@@ -3,13 +3,28 @@ import addFormats from 'ajv-formats';
 import type { RequestHandler } from 'express';
 import { ValidationError, type ValidationIssue } from '../../errors';
 
+/**
+ * Instancia única de AJV. Compilar un esquema es costoso, por eso se compila
+ * una vez al definir la ruta y no en cada petición.
+ *
+ * - `allErrors`: reporta todos los problemas a la vez, no solo el primero.
+ * - `coerceTypes: false`: "123" no se convierte en número a escondidas.
+ */
 const ajv = new Ajv({ allErrors: true, coerceTypes: false, strict: true });
 addFormats(ajv, ['email', 'date', 'date-time', 'uuid']);
 
 type RequestPart = 'body' | 'params' | 'query';
 
+/** Esquemas a validar por cada parte de la petición. */
 export type RequestSchemas = Partial<Record<RequestPart, Schema>>;
 
+/**
+ * Crea un middleware que valida body, params y/o query contra JSON Schemas.
+ * Si algo no cumple, lanza {@link ValidationError} con todos los problemas.
+ *
+ * @example
+ * router.post('/', validate({ body: taskBodySchema }), controller.create);
+ */
 export function validate(schemas: RequestSchemas): RequestHandler {
   const validators = (Object.entries(schemas) as [RequestPart, Schema][]).map(
     ([part, schema]) => [part, ajv.compile(schema)] as const,
@@ -19,7 +34,8 @@ export function validate(schemas: RequestSchemas): RequestHandler {
     const issues: ValidationIssue[] = [];
 
     for (const [part, validator] of validators) {
-      // sin body, express deja req.body en undefined
+      // Si no llega cuerpo, Express deja `req.body` en undefined: se valida como objeto vacío
+      // para que el error sea "falta el campo X" y no "debe ser un objeto".
       const data = part === 'body' ? (req.body ?? {}) : req[part];
       if (!validator(data)) {
         issues.push(...(validator.errors ?? []).map((error) => toIssue(part, error)));
@@ -34,6 +50,7 @@ export function validate(schemas: RequestSchemas): RequestHandler {
   };
 }
 
+/** Traduce un error de AJV a un mensaje en español con la ruta del campo. */
 function toIssue(part: RequestPart, error: ErrorObject): ValidationIssue {
   const path = error.instancePath.replace(/^\//, '').replace(/\//g, '.');
   const params = error.params as Record<string, unknown>;

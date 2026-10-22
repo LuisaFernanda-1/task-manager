@@ -1,10 +1,23 @@
 import dotenv from 'dotenv';
 
+/** Entornos de ejecución soportados por la aplicación. */
 export type NodeEnv = 'development' | 'production' | 'test';
 
 const VALID_ENVS: readonly NodeEnv[] = ['development', 'production', 'test'];
 const MIN_JWT_SECRET_LENGTH = 32;
 
+/**
+ * Configuración centralizada de la aplicación (patrón Singleton).
+ *
+ * Lee las variables de entorno UNA sola vez, las valida y las expone tipadas
+ * y de solo lectura. Si falta una variable obligatoria o tiene un valor
+ * inválido, la aplicación falla al arrancar (fail fast) en lugar de fallar
+ * más tarde en medio de una petición.
+ *
+ * @example
+ * const config = Config.getInstance();
+ * app.listen(config.port);
+ */
 export class Config {
   private static instance: Config | null = null;
 
@@ -16,6 +29,7 @@ export class Config {
   readonly jwtExpiresIn: string;
   readonly bcryptSaltRounds: number;
 
+  /** El constructor es privado: la única forma de obtener la instancia es `getInstance()`. */
   private constructor(env: NodeJS.ProcessEnv) {
     this.nodeEnv = Config.parseNodeEnv(env.NODE_ENV);
     this.port = Config.parseInteger('PORT', env.PORT ?? '3000', 1, 65535);
@@ -32,6 +46,10 @@ export class Config {
     Object.freeze(this);
   }
 
+  /**
+   * Devuelve la instancia única de la configuración, creándola la primera vez.
+   * En la primera llamada carga el archivo `.env` (o `.env.test` cuando NODE_ENV=test).
+   */
   static getInstance(): Config {
     if (!Config.instance) {
       const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
@@ -41,6 +59,10 @@ export class Config {
     return Config.instance;
   }
 
+  /**
+   * Solo para pruebas unitarias: crea una configuración a partir de un objeto
+   * de variables, sin leer archivos `.env` y sin tocar la instancia única.
+   */
   static fromEnvForTesting(env: NodeJS.ProcessEnv): Config {
     return new Config(env);
   }

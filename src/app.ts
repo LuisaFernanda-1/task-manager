@@ -18,11 +18,21 @@ import { BcryptPasswordHasher } from './services/password.service';
 import { TaskService } from './services/task.service';
 import { TokenService } from './services/token.service';
 
+/** Dependencias externas que necesita la aplicación. */
 export interface AppDependencies {
   config: Config;
   pool: Pool;
 }
 
+/**
+ * Construye la aplicación Express (raíz de composición).
+ *
+ * Aquí, y solo aquí, se crean las implementaciones concretas y se conectan
+ * las capas: repositorios → servicios → controladores → rutas. El resto del
+ * código recibe sus dependencias por constructor, lo que permite probar cada
+ * capa por separado. La función no abre puertos: `server.ts` decide cuándo
+ * escuchar, y las pruebas usan la app directamente con supertest.
+ */
 export function createApp({ config, pool }: AppDependencies): Express {
   const tokenService = new TokenService(config.jwtSecret, config.jwtExpiresIn);
   const authService = new AuthService(
@@ -36,7 +46,7 @@ export function createApp({ config, pool }: AppDependencies): Express {
   const app = express();
   app.disable('x-powered-by');
 
-  // swagger ui necesita scripts y estilos inline
+  // Swagger UI usa scripts y estilos en línea: se le da su propia CSP más permisiva.
   app.use('/docs', helmet({ contentSecurityPolicy: false }), swaggerUi.serve, swaggerUi.setup(openApiSpec, swaggerUiOptions));
   app.get('/docs.json', (_req, res) => {
     res.json(openApiSpec);

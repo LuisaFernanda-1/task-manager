@@ -1,3 +1,7 @@
+/**
+ * Script de línea de comandos: `npm run db:migrate`.
+ * Crea o actualiza las tablas de la base de datos configurada en `.env`.
+ */
 import { closePool, getPool } from './database';
 import { runMigrations } from './migrator';
 

@@ -5,6 +5,13 @@ import { authenticate } from '../middlewares/authenticate';
 import { validate } from '../middlewares/validate';
 import { listTasksQuerySchema, taskBodySchema, taskIdParamsSchema, taskPatchSchema } from '../schemas/task.schemas';
 
+/**
+ * Rutas de tareas, montadas en `/tasks`. Todas exigen token:
+ * el middleware `authenticate` se aplica una sola vez a todo el router.
+ *
+ * @param controller Controlador que atiende cada ruta.
+ * @param tokens Servicio con el que se verifican los tokens.
+ */
 export function createTaskRouter(controller: TaskController, tokens: TokenService): Router {
   const router = Router();
   router.use(authenticate(tokens));

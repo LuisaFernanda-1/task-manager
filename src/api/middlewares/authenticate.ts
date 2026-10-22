@@ -2,11 +2,20 @@ import type { RequestHandler } from 'express';
 import { AuthenticationError } from '../../errors';
 import type { TokenService } from '../../services/token.service';
 
+/** Usuario autenticado disponible en `req.user` dentro de las rutas protegidas. */
 export interface AuthUser {
   id: string;
   email: string;
 }
 
+/**
+ * Middleware que protege rutas con JWT.
+ *
+ * Lee la cabecera `Authorization: Bearer <token>`, verifica firma y expiración
+ * y, si es válido, guarda el usuario en `req.user`. Si no, responde 401.
+ *
+ * @param tokens Servicio con el que se verifican los tokens.
+ */
 export function authenticate(tokens: TokenService): RequestHandler {
   return (req, _res, next) => {
     const header = req.headers.authorization;
@@ -25,6 +34,10 @@ export function authenticate(tokens: TokenService): RequestHandler {
   };
 }
 
+/**
+ * Devuelve el usuario autenticado de la petición.
+ * @throws {AuthenticationError} Si se usa en una ruta sin el middleware `authenticate`.
+ */
 export function getAuthUser(req: Express.Request): AuthUser {
   if (!req.user) {
     throw new AuthenticationError();

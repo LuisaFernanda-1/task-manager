@@ -1,6 +1,19 @@
 import type { SwaggerUiOptions } from 'swagger-ui-express';
 
+/**
+ * Estilos propios para la página de Swagger en `/docs`.
+ *
+ * Partí del verde original de Swagger (el del logo) y lo llevé a una versión
+ * más limpia: bordes redondeados, más aire entre bloques y un color suave
+ * para cada método HTTP. Los colores están en variables, así que para el modo
+ * oscuro solo cambio sus valores dentro de `prefers-color-scheme: dark`.
+ *
+ * No cargo nada de internet: uso las fuentes que ya trae el sistema.
+ * La barra superior de Swagger la oculto y en su lugar pongo un encabezado
+ * hecho solo con CSS (con `::before`), sin tener que meter JavaScript.
+ */
 export const swaggerCustomCss = `
+/* Paleta en modo claro, basada en los verdes del logo de Swagger */
 :root {
   --tm-bg: #f4f9f5;
   --tm-surface: #ffffff;
@@ -30,6 +43,7 @@ export const swaggerCustomCss = `
   --tm-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 }
 
+/* Modo oscuro: mismas variables, otros valores */
 @media (prefers-color-scheme: dark) {
   :root {
     --tm-bg: #0f1613;
@@ -55,6 +69,7 @@ export const swaggerCustomCss = `
   }
 }
 
+/* Fondo, tipografía y colores de texto generales */
 body { background: var(--tm-bg); color: var(--tm-text); }
 .swagger-ui, .swagger-ui .info .title, .swagger-ui .opblock-tag,
 .swagger-ui .btn, .swagger-ui input, .swagger-ui select, .swagger-ui textarea,
@@ -88,6 +103,7 @@ body { background: var(--tm-bg); color: var(--tm-text); }
 .swagger-ui .model-toggle::after { fill: var(--tm-text-muted); }
 .swagger-ui .wrapper { max-width: 1180px; padding: 0 24px; }
 
+/* Encabezado: escondo la barra de Swagger y pongo título y descripción */
 .swagger-ui .topbar { display: none; }
 #swagger-ui::before, .swagger-ui.swagger-container::before {
   display: block;
@@ -107,9 +123,10 @@ body { background: var(--tm-bg); color: var(--tm-text); }
   content: "Gestión de tareas personales con autenticación JWT · Node.js, Express, TypeScript y PostgreSQL";
   padding: 0 24px 32px;
   font-size: 15px;
-  border-bottom: 4px solid var(--tm-accent);
+  border-bottom: 4px solid var(--tm-accent); /* la franja verde lima del logo */
 }
 
+/* Bloque de información y la barra donde está el botón Authorize */
 .swagger-ui .info { margin: 36px 0 24px; }
 .swagger-ui .info .title small { background: var(--tm-primary-soft); border-radius: 999px; padding: 3px 10px; }
 .swagger-ui .info .title small pre { color: var(--tm-primary-strong); font-family: var(--tm-mono); }
@@ -125,6 +142,7 @@ body { background: var(--tm-bg); color: var(--tm-text); }
   margin: 0 auto 28px; max-width: 1132px; padding: 18px 0;
 }
 
+/* Botones y campos de texto */
 .swagger-ui .btn {
   border-radius: 8px; border: 1px solid var(--tm-border); box-shadow: none;
   background: var(--tm-surface); color: var(--tm-text); transition: background .15s, border-color .15s;
@@ -146,11 +164,13 @@ body { background: var(--tm-bg); color: var(--tm-text); }
 .swagger-ui .filter-container .operation-filter-input { margin: 8px 0 20px; padding: 10px 14px; }
 .swagger-ui textarea { font-family: var(--tm-mono); }
 
+/* Títulos de cada grupo de endpoints (Auth, Tasks...) */
 .swagger-ui .opblock-tag { border-bottom: 1px solid var(--tm-border); font-size: 20px; padding: 12px 4px; }
 .swagger-ui .opblock-tag:hover { background: transparent; }
 .swagger-ui .opblock-tag small { color: var(--tm-text-muted); }
 .swagger-ui .opblock-tag-section { margin-bottom: 12px; }
 
+/* Cada endpoint: tarjeta redondeada con sombra suave */
 .swagger-ui .opblock {
   border-radius: var(--tm-radius); border-width: 1px; box-shadow: var(--tm-shadow);
   margin: 0 0 12px; overflow: hidden;
@@ -170,6 +190,7 @@ body { background: var(--tm-bg); color: var(--tm-text); }
 }
 .swagger-ui .opblock.opblock-deprecated { opacity: 0.7; }
 
+/* Un color distinto para cada método */
 .swagger-ui .opblock.opblock-get { background: var(--tm-get-bg); border-color: var(--tm-get); }
 .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--tm-get); }
 .swagger-ui .opblock.opblock-get .tab-header .tab-item.active h4 span::after { background: var(--tm-get); }
@@ -190,10 +211,12 @@ body { background: var(--tm-bg); color: var(--tm-text); }
 .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--tm-delete); }
 .swagger-ui .opblock.opblock-delete .tab-header .tab-item.active h4 span::after { background: var(--tm-delete); }
 
+/* En oscuro las etiquetas de método son claras, así que el texto va oscuro */
 @media (prefers-color-scheme: dark) {
   .swagger-ui .opblock .opblock-summary-method { color: #0f1613; }
 }
 
+/* Tablas, respuestas y la sección de esquemas del final */
 .swagger-ui table thead tr th, .swagger-ui table thead tr td { border-bottom: 1px solid var(--tm-border); }
 .swagger-ui .responses-inner { padding: 16px 20px; }
 .swagger-ui .response-control-media-type__accept-message { color: var(--tm-post); }
@@ -212,6 +235,7 @@ body { background: var(--tm-bg); color: var(--tm-text); }
 .swagger-ui .prop-type { color: var(--tm-primary); }
 .swagger-ui .parameter__name.required::after, .swagger-ui .parameter__name.required span { color: var(--tm-delete); }
 
+/* Ventana que se abre al darle a Authorize */
 .swagger-ui .dialog-ux .backdrop-ux { background: rgba(10, 25, 20, 0.55); }
 .swagger-ui .dialog-ux .modal-ux {
   background: var(--tm-surface); border: 1px solid var(--tm-border);
@@ -222,6 +246,17 @@ body { background: var(--tm-bg); color: var(--tm-text); }
 .swagger-ui .auth-container { border-bottom: 1px solid var(--tm-border); }
 `;
 
+/**
+ * Configuración que le paso a `swagger-ui-express` para `/docs`: el título de
+ * la pestaña, los estilos de arriba ({@link swaggerCustomCss}) y algunas
+ * opciones para que probar la API sea más cómodo:
+ *
+ * - `persistAuthorization`: el token de **Authorize** no se pierde al recargar.
+ * - `displayRequestDuration`: muestra cuánto tardó cada petición.
+ * - `docExpansion: 'list'`: los grupos salen abiertos y los endpoints cerrados.
+ * - `filter`: agrega un buscador para filtrar por grupo.
+ * - `tryItOutEnabled`: los formularios para probar ya vienen activados.
+ */
 export const swaggerUiOptions: SwaggerUiOptions = {
   customSiteTitle: 'Task Manager API · Docs',
   customCss: swaggerCustomCss,

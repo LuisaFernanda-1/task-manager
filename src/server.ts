@@ -2,6 +2,10 @@ import { createApp } from './app';
 import { Config } from './config/env';
 import { closePool, getPool } from './persistence/database';
 
+/**
+ * Punto de entrada: carga la configuración, comprueba la base de datos y
+ * levanta el servidor HTTP. Maneja el apagado ordenado con SIGINT/SIGTERM.
+ */
 async function bootstrap(): Promise<void> {
   const config = Config.getInstance();
   const pool = getPool();

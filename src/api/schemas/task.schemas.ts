@@ -2,11 +2,22 @@ import type { JSONSchemaType, Schema } from 'ajv';
 import { TASK_STATUSES, type TaskStatus } from '../../models/task';
 import type { ReplaceTaskInput } from '../../services/task.service';
 
+/**
+ * Query string de GET /tasks tal como llega por HTTP. `vencidas` es texto
+ * porque la validación no convierte tipos; el controlador lo pasa a booleano.
+ */
 export interface ListTasksQuery {
   estado?: TaskStatus;
   vencidas?: 'true' | 'false';
 }
 
+/**
+ * Cuerpo de POST /tasks y PUT /tasks/:id. Ambos aceptan exactamente los mismos
+ * campos: en PUT lo que no se envía vuelve a su valor por defecto.
+ *
+ * `fecha_vencimiento` usa `date-time`, que exige zona horaria (`Z` o `-05:00`):
+ * sin ella no se sabe a qué instante se refiere y el filtro de vencidas fallaría.
+ */
 export const taskBodySchema: JSONSchemaType<ReplaceTaskInput> = {
   type: 'object',
   additionalProperties: false,
@@ -19,7 +30,16 @@ export const taskBodySchema: JSONSchemaType<ReplaceTaskInput> = {
   },
 };
 
-// mismas reglas que POST, pero todo opcional; titulo y estado no aceptan null
+/**
+ * Cuerpo de PATCH /tasks/:id: las mismas reglas que POST, pero todo opcional.
+ *
+ * - `minProperties: 1`: un cuerpo vacío responde 400.
+ * - `descripcion` y `fecha_vencimiento` aceptan `null` para borrarlos.
+ * - `titulo` y `estado` no aceptan `null`: son obligatorios en la tarea.
+ *
+ * Se tipa como `Schema` y no con `JSONSchemaType`, porque este último obliga a
+ * marcar como `nullable` los campos opcionales y permitiría `titulo: null`.
+ */
 export const taskPatchSchema: Schema = {
   type: 'object',
   additionalProperties: false,
@@ -32,6 +52,7 @@ export const taskPatchSchema: Schema = {
   },
 };
 
+/** Parámetro de ruta `:id`: debe ser un UUID válido. */
 export const taskIdParamsSchema: JSONSchemaType<{ id: string }> = {
   type: 'object',
   additionalProperties: false,
@@ -41,6 +62,7 @@ export const taskIdParamsSchema: JSONSchemaType<{ id: string }> = {
   },
 };
 
+/** Query string de GET /tasks: `estado` y `vencidas` (solo `"true"` o `"false"`). */
 export const listTasksQuerySchema: JSONSchemaType<ListTasksQuery> = {
   type: 'object',
   additionalProperties: false,
