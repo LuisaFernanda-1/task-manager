@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { getAuthUser } from '../api/middlewares/authenticate';
 import type { ListTasksQuery } from '../api/schemas/task.schemas';
 import type { CreateTaskData, TaskFilters } from '../models/task';
-import type { ReplaceTaskInput, TaskService } from '../services/task.service';
+import type { ReplaceTaskInput, TaskService, UpdateTaskInput } from '../services/task.service';
 
 type TaskParams = { id: string };
 
@@ -33,6 +33,12 @@ export class TaskController {
   replace = async (req: Request<TaskParams>, res: Response): Promise<void> => {
     const user = getAuthUser(req);
     const task = await this.tasks.replace(user.id, req.params.id, req.body as ReplaceTaskInput);
+    res.status(200).json(task);
+  };
+
+  update = async (req: Request<TaskParams>, res: Response): Promise<void> => {
+    const user = getAuthUser(req);
+    const task = await this.tasks.update(user.id, req.params.id, req.body as UpdateTaskInput);
     res.status(200).json(task);
   };
 

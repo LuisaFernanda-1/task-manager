@@ -1,9 +1,16 @@
 import { NotFoundError } from '../errors';
-import type { CreateTaskData, Task, TaskFilters, TaskStatus } from '../models/task';
+import type { CreateTaskData, Task, TaskFilters, TaskStatus, UpdateTaskData } from '../models/task';
 import type { TaskRepository } from '../persistence/task.repository';
 
 export interface ReplaceTaskInput {
   titulo: string;
+  descripcion?: string | null;
+  fecha_vencimiento?: string | null;
+  estado?: TaskStatus;
+}
+
+export interface UpdateTaskInput {
+  titulo?: string;
   descripcion?: string | null;
   fecha_vencimiento?: string | null;
   estado?: TaskStatus;
@@ -40,6 +47,18 @@ export class TaskService {
       fecha_vencimiento: input.fecha_vencimiento ?? null,
       estado: input.estado ?? 'pendiente',
     });
+    if (!task) throw new NotFoundError(TASK_NOT_FOUND);
+    return task;
+  }
+
+  async update(userId: string, taskId: string, input: UpdateTaskInput): Promise<Task> {
+    const data: UpdateTaskData = {};
+    if (input.titulo !== undefined) data.titulo = input.titulo.trim();
+    if (input.descripcion !== undefined) data.descripcion = cleanOptionalText(input.descripcion);
+    if (input.fecha_vencimiento !== undefined) data.fecha_vencimiento = input.fecha_vencimiento;
+    if (input.estado !== undefined) data.estado = input.estado;
+
+    const task = await this.tasks.updateForUser(taskId, userId, data);
     if (!task) throw new NotFoundError(TASK_NOT_FOUND);
     return task;
   }

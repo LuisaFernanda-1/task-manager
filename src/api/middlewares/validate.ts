@@ -56,6 +56,8 @@ function toIssue(part: RequestPart, error: ErrorObject): ValidationIssue {
       };
     case 'type':
       return { field: join(part, path), message: `Debe ser de tipo ${String(params.type)}` };
+    case 'minProperties':
+      return { field: part, message: 'Debe enviar al menos un campo' };
     case 'pattern':
       return { field: join(part, path), message: 'No puede estar vacío' };
     default:

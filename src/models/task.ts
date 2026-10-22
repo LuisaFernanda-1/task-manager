@@ -27,6 +27,8 @@ export interface ReplaceTaskData {
   estado: TaskStatus;
 }
 
+export type UpdateTaskData = Partial<ReplaceTaskData>;
+
 export interface TaskFilters {
   estado?: TaskStatus;
   vencidas?: boolean;

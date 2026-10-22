@@ -1,16 +1,20 @@
 import type { Pool } from 'pg';
-import type { CreateTaskData, ReplaceTaskData, Task, TaskFilters } from '../models/task';
+import type { CreateTaskData, ReplaceTaskData, Task, TaskFilters, UpdateTaskData } from '../models/task';
 
 export interface TaskRepository {
   create(userId: string, data: CreateTaskData): Promise<Task>;
   findAllByUser(userId: string, filters?: TaskFilters): Promise<Task[]>;
   findByIdForUser(id: string, userId: string): Promise<Task | null>;
   replaceForUser(id: string, userId: string, data: ReplaceTaskData): Promise<Task | null>;
+  updateForUser(id: string, userId: string, data: UpdateTaskData): Promise<Task | null>;
   deleteForUser(id: string, userId: string): Promise<boolean>;
 }
 
 const TASK_COLUMNS =
   'id, usuario_id, titulo, descripcion, fecha_vencimiento, estado, creado_en, actualizado_en';
+
+// únicas columnas que PATCH puede tocar
+const UPDATABLE_COLUMNS = ['titulo', 'descripcion', 'fecha_vencimiento', 'estado'] as const;
 
 const OVERDUE_CONDITION =
   "(fecha_vencimiento IS NOT NULL AND fecha_vencimiento < NOW() AND estado <> 'completada')";
@@ -65,6 +69,29 @@ export class PgTaskRepository implements TaskRepository {
        WHERE id = $1 AND usuario_id = $2
        RETURNING ${TASK_COLUMNS}`,
       [id, userId, data.titulo, data.descripcion, data.fecha_vencimiento, data.estado],
+    );
+    return rows[0] ?? null;
+  }
+
+  async updateForUser(id: string, userId: string, data: UpdateTaskData): Promise<Task | null> {
+    const params: unknown[] = [id, userId];
+    const sets: string[] = [];
+
+    for (const column of UPDATABLE_COLUMNS) {
+      if (data[column] !== undefined) {
+        params.push(data[column]);
+        sets.push(`${column} = $${params.length}`);
+      }
+    }
+
+    if (sets.length === 0) return this.findByIdForUser(id, userId);
+
+    const { rows } = await this.pool.query<Task>(
+      `UPDATE tareas
+       SET ${sets.join(', ')}, actualizado_en = NOW()
+       WHERE id = $1 AND usuario_id = $2
+       RETURNING ${TASK_COLUMNS}`,
+      params,
     );
     return rows[0] ?? null;
   }

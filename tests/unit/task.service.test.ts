@@ -21,6 +21,7 @@ function mockRepository(): TaskRepository {
     findAllByUser: vi.fn().mockResolvedValue([sampleTask]),
     findByIdForUser: vi.fn().mockResolvedValue(sampleTask),
     replaceForUser: vi.fn().mockResolvedValue(sampleTask),
+    updateForUser: vi.fn().mockResolvedValue(sampleTask),
     deleteForUser: vi.fn().mockResolvedValue(true),
   };
 }

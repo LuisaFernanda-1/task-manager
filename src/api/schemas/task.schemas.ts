@@ -1,4 +1,4 @@
-import type { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType, Schema } from 'ajv';
 import { TASK_STATUSES, type TaskStatus } from '../../models/task';
 import type { ReplaceTaskInput } from '../../services/task.service';
 
@@ -16,6 +16,19 @@ export const taskBodySchema: JSONSchemaType<ReplaceTaskInput> = {
     descripcion: { type: 'string', maxLength: 2000, nullable: true },
     fecha_vencimiento: { type: 'string', format: 'date-time', nullable: true },
     estado: { type: 'string', enum: [...TASK_STATUSES], nullable: true },
+  },
+};
+
+// mismas reglas que POST, pero todo opcional; titulo y estado no aceptan null
+export const taskPatchSchema: Schema = {
+  type: 'object',
+  additionalProperties: false,
+  minProperties: 1,
+  properties: {
+    titulo: { type: 'string', minLength: 1, maxLength: 150, pattern: '\\S' },
+    descripcion: { type: ['string', 'null'], maxLength: 2000 },
+    fecha_vencimiento: { type: ['string', 'null'], format: 'date-time' },
+    estado: { type: 'string', enum: [...TASK_STATUSES] },
   },
 };
 
