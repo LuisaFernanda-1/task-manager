@@ -70,6 +70,16 @@ describe('TaskService', () => {
     await expect(service.replace('user-1', 'x', { titulo: 'a' })).rejects.toBeInstanceOf(NotFoundError);
   });
 
+  it('PATCH envía al repositorio solo los campos recibidos', async () => {
+    await service.update('user-1', 'task-1', { titulo: '  Nuevo  ', descripcion: null });
+    expect(repo.updateForUser).toHaveBeenCalledWith('task-1', 'user-1', { titulo: 'Nuevo', descripcion: null });
+  });
+
+  it('lanza NotFoundError al actualizar una tarea inexistente', async () => {
+    vi.mocked(repo.updateForUser).mockResolvedValue(null);
+    await expect(service.update('user-1', 'x', { estado: 'completada' })).rejects.toBeInstanceOf(NotFoundError);
+  });
+
   it('lanza NotFoundError al borrar una tarea inexistente', async () => {
     vi.mocked(repo.deleteForUser).mockResolvedValue(false);
     await expect(service.delete('user-1', 'x')).rejects.toBeInstanceOf(NotFoundError);

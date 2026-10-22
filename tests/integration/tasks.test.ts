@@ -151,6 +151,145 @@ describe('CRUD de tareas', () => {
   });
 });
 
+describe('Vencimiento con zona horaria', () => {
+  let token: string;
+
+  beforeEach(async () => {
+    await resetDatabase();
+    token = await registerAndLogin(app);
+  });
+
+  it('POST /tasks responde 400 si la fecha no trae zona horaria', async () => {
+    const res = await request(app)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ titulo: 'x', fecha_vencimiento: '2026-10-21T16:00:00' })
+      .expect(400);
+    expect(res.body.error.details[0]).toMatchObject({ field: 'body.fecha_vencimiento' });
+    expect(res.body.error.details[0].message).toMatch(/zona horaria/);
+  });
+
+  it('POST /tasks responde 400 si solo se envía la fecha', async () => {
+    await request(app)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ titulo: 'x', fecha_vencimiento: '2026-10-21' })
+      .expect(400);
+  });
+
+  it('el mismo instante con distinto desfase se guarda igual', async () => {
+    const bogota = await createTask(token, { titulo: 'Bogotá', fecha_vencimiento: '2026-10-21T16:00:00-05:00' });
+    const utc = await createTask(token, { titulo: 'UTC', fecha_vencimiento: '2026-10-21T21:00:00Z' });
+    expect(bogota.fecha_vencimiento).toBe('2026-10-21T21:00:00.000Z');
+    expect(utc.fecha_vencimiento).toBe(bogota.fecha_vencimiento);
+  });
+});
+
+describe('Filtro de tareas vencidas', () => {
+  let token: string;
+
+  beforeEach(async () => {
+    await resetDatabase();
+    token = await registerAndLogin(app);
+    await createTask(token, { titulo: 'Atrasada', fecha_vencimiento: '2020-01-01T12:00:00Z' });
+    await createTask(token, { titulo: 'Completada tarde', fecha_vencimiento: '2020-01-01T12:00:00Z', estado: 'completada' });
+    await createTask(token, { titulo: 'Futura', fecha_vencimiento: '2099-01-01T12:00:00Z' });
+    await createTask(token, { titulo: 'Sin fecha' });
+  });
+
+  const titles = (body: { titulo: string }[]) => body.map((t) => t.titulo).sort();
+
+  it('GET /tasks?vencidas=true devuelve solo las atrasadas sin completar', async () => {
+    const res = await request(app).get('/tasks?vencidas=true').set('Authorization', `Bearer ${token}`).expect(200);
+    expect(titles(res.body)).toEqual(['Atrasada']);
+  });
+
+  it('GET /tasks?vencidas=false devuelve el resto', async () => {
+    const res = await request(app).get('/tasks?vencidas=false').set('Authorization', `Bearer ${token}`).expect(200);
+    expect(titles(res.body)).toEqual(['Completada tarde', 'Futura', 'Sin fecha']);
+  });
+
+  it('se combina con ?estado=', async () => {
+    const res = await request(app)
+      .get('/tasks?vencidas=false&estado=pendiente')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(titles(res.body)).toEqual(['Futura', 'Sin fecha']);
+  });
+
+  it('responde 400 si vencidas no es "true" o "false"', async () => {
+    await request(app).get('/tasks?vencidas=si').set('Authorization', `Bearer ${token}`).expect(400);
+  });
+});
+
+describe('PATCH /tasks/:id', () => {
+  let token: string;
+  let task: { id: string } & Record<string, unknown>;
+
+  beforeEach(async () => {
+    await resetDatabase();
+    token = await registerAndLogin(app);
+    task = await createTask(token, {
+      titulo: 'Original',
+      descripcion: 'desc',
+      fecha_vencimiento: '2026-11-01T12:00:00Z',
+    });
+  });
+
+  const patch = (body: object) =>
+    request(app).patch(`/tasks/${task.id}`).set('Authorization', `Bearer ${token}`).send(body);
+
+  it('cambia solo el estado y conserva los demás campos', async () => {
+    const res = await patch({ estado: 'completada' }).expect(200);
+    expect(res.body).toMatchObject({
+      titulo: 'Original',
+      descripcion: 'desc',
+      fecha_vencimiento: '2026-11-01T12:00:00.000Z',
+      estado: 'completada',
+    });
+    expect(new Date(res.body.actualizado_en).getTime()).toBeGreaterThan(new Date(task.actualizado_en as string).getTime());
+  });
+
+  it('recorta los espacios del título', async () => {
+    const res = await patch({ titulo: '  Nuevo  ' }).expect(200);
+    expect(res.body.titulo).toBe('Nuevo');
+  });
+
+  it('responde 400 con un cuerpo vacío', async () => {
+    await patch({}).expect(400);
+  });
+
+  it('responde 400 si titulo es null', async () => {
+    await patch({ titulo: null }).expect(400);
+  });
+
+  it('responde 400 si estado es null', async () => {
+    await patch({ estado: null }).expect(400);
+  });
+
+  it('descripcion null la borra', async () => {
+    const res = await patch({ descripcion: null }).expect(200);
+    expect(res.body).toMatchObject({ descripcion: null, titulo: 'Original' });
+  });
+
+  it('fecha_vencimiento null la borra', async () => {
+    const res = await patch({ fecha_vencimiento: null }).expect(200);
+    expect(res.body.fecha_vencimiento).toBeNull();
+  });
+
+  it('responde 400 con campos no permitidos', async () => {
+    await patch({ usuario_id: NON_EXISTENT_ID }).expect(400);
+  });
+
+  it('responde 404 si la tarea no existe', async () => {
+    await request(app)
+      .patch(`/tasks/${NON_EXISTENT_ID}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ estado: 'completada' })
+      .expect(404);
+  });
+});
+
 describe('Aislamiento entre usuarios', () => {
   let tokenLuisa: string;
   let tokenOtro: string;
@@ -180,6 +319,16 @@ describe('Aislamiento entre usuarios', () => {
       .expect(404);
     const res = await request(app).get(`/tasks/${taskId}`).set('Authorization', `Bearer ${tokenLuisa}`).expect(200);
     expect(res.body.titulo).toBe('Privada de Luisa');
+  });
+
+  it('PATCH /tasks/:id de una tarea ajena responde 404 y no la modifica', async () => {
+    await request(app)
+      .patch(`/tasks/${taskId}`)
+      .set('Authorization', `Bearer ${tokenOtro}`)
+      .send({ estado: 'completada' })
+      .expect(404);
+    const res = await request(app).get(`/tasks/${taskId}`).set('Authorization', `Bearer ${tokenLuisa}`).expect(200);
+    expect(res.body.estado).toBe('pendiente');
   });
 
   it('DELETE /tasks/:id de una tarea ajena responde 404 y no la borra', async () => {
