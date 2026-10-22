@@ -127,8 +127,32 @@ export const openApiSpec = {
             nullable: true,
             example: 'Subir el repositorio y grabar el video',
           },
-          fecha_vencimiento: { type: 'string', format: 'date', nullable: true, example: '2026-10-23' },
+          fecha_vencimiento: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            description: 'Fecha y hora ISO 8601 con zona horaria (Z o un desfase como -05:00).',
+            example: '2026-10-23T16:00:00-05:00',
+          },
           estado: { type: 'string', enum: [...TASK_STATUSES], default: 'pendiente', nullable: true },
+        },
+      },
+      TaskPatch: {
+        type: 'object',
+        minProperties: 1,
+        additionalProperties: false,
+        description: 'Solo los campos que se quieren cambiar. `descripcion` y `fecha_vencimiento` aceptan null para borrarlos.',
+        properties: {
+          titulo: { type: 'string', minLength: 1, maxLength: 150, example: 'Entregar prueba técnica' },
+          descripcion: { type: 'string', maxLength: 2000, nullable: true },
+          fecha_vencimiento: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            description: 'Fecha y hora ISO 8601 con zona horaria (Z o un desfase como -05:00).',
+            example: '2026-10-23T16:00:00-05:00',
+          },
+          estado: { type: 'string', enum: [...TASK_STATUSES], example: 'completada' },
         },
       },
       Task: {
@@ -138,7 +162,13 @@ export const openApiSpec = {
           usuario_id: { type: 'string', format: 'uuid' },
           titulo: { type: 'string', example: 'Entregar prueba técnica' },
           descripcion: { type: 'string', nullable: true, example: 'Subir el repositorio y grabar el video' },
-          fecha_vencimiento: { type: 'string', format: 'date', nullable: true, example: '2026-10-23' },
+          fecha_vencimiento: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            description: 'Se devuelve en UTC.',
+            example: '2026-10-23T21:00:00.000Z',
+          },
           estado: { type: 'string', enum: [...TASK_STATUSES], example: 'pendiente' },
           creado_en: { type: 'string', format: 'date-time' },
           actualizado_en: { type: 'string', format: 'date-time' },
@@ -220,6 +250,15 @@ export const openApiSpec = {
             description: 'Filtra por estado',
             schema: { type: 'string', enum: [...TASK_STATUSES] },
           },
+          {
+            name: 'vencidas',
+            in: 'query',
+            required: false,
+            description:
+              '`true`: tareas cuyo vencimiento ya pasó y no están completadas. `false`: el resto ' +
+              '(sin fecha, con fecha futura o completadas). Se puede combinar con `estado`.',
+            schema: { type: 'string', enum: ['true', 'false'] },
+          },
         ],
         responses: {
           '200': {
@@ -254,6 +293,27 @@ export const openApiSpec = {
         requestBody: {
           required: true,
           content: { 'application/json': { schema: { $ref: '#/components/schemas/TaskInput' } } },
+        },
+        responses: {
+          '200': { description: 'Tarea actualizada', content: { 'application/json': { schema: { $ref: '#/components/schemas/Task' } } } },
+          '400': validationFailed,
+          '401': unauthorized,
+          '404': taskNotFound,
+        },
+      },
+      patch: {
+        tags: ['Tasks'],
+        summary: 'Actualiza parcialmente una tarea propia',
+        description: 'Solo cambian los campos enviados; el resto se conserva. Un cuerpo vacío responde 400.',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/TaskPatch' },
+              example: { estado: 'completada' },
+            },
+          },
         },
         responses: {
           '200': { description: 'Tarea actualizada', content: { 'application/json': { schema: { $ref: '#/components/schemas/Task' } } } },

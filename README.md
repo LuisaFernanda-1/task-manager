@@ -2,7 +2,7 @@
 
 API RESTful para gestionar tareas personales. Los usuarios se registran, inician sesión con JWT y administran **solo sus propias tareas**.
 
-Construida con **Node.js, Express 5, TypeScript y PostgreSQL**, organizada en capas, con validación por JSON Schema (AJV), manejo de errores centralizado, documentación Swagger y pruebas automatizadas (61 pruebas unitarias y de integración).
+Construida con **Node.js, Express 5, TypeScript y PostgreSQL**, organizada en capas, con validación por JSON Schema (AJV), manejo de errores centralizado, documentación Swagger y pruebas automatizadas (80 pruebas unitarias y de integración).
 
 ---
 
@@ -209,9 +209,10 @@ La configuración se valida al arrancar: un `JWT_SECRET` corto, un puerto no num
 | `POST` | `/auth/register` | — | Registra un usuario | `201` |
 | `POST` | `/auth/login` | — | Devuelve un JWT | `200` |
 | `POST` | `/tasks` | Bearer | Crea una tarea | `201` |
-| `GET` | `/tasks` | Bearer | Lista las tareas propias (`?estado=` opcional) | `200` |
+| `GET` | `/tasks` | Bearer | Lista las tareas propias (`?estado=` y `?vencidas=true\|false` opcionales) | `200` |
 | `GET` | `/tasks/:id` | Bearer | Consulta una tarea propia | `200` |
 | `PUT` | `/tasks/:id` | Bearer | Reemplaza una tarea propia | `200` |
+| `PATCH` | `/tasks/:id` | Bearer | Actualiza solo los campos enviados | `200` |
 | `DELETE` | `/tasks/:id` | Bearer | Elimina una tarea propia | `204` |
 | `GET` | `/health` | — | Estado de la API y la base de datos | `200` |
 | `GET` | `/docs` | — | Swagger UI | `200` |
@@ -223,9 +224,11 @@ La configuración se valida al arrancar: un `JWT_SECRET` corto, un puerto no num
 | `id` | UUID | Generado por la base de datos |
 | `titulo` | string | Obligatorio, 1 a 150 caracteres, no puede ser solo espacios |
 | `descripcion` | string \| null | Opcional, máximo 2000 caracteres |
-| `fecha_vencimiento` | `YYYY-MM-DD` \| null | Opcional, debe ser una fecha real (se rechaza `2026-02-30`) |
+| `fecha_vencimiento` | ISO 8601 con zona horaria \| null | Opcional. Se envía con `Z` o un desfase (`2026-10-23T16:00:00-05:00`); sin zona horaria responde 400. Se devuelve en UTC (`2026-10-23T21:00:00.000Z`) |
 | `estado` | enum | `pendiente` (por defecto), `en curso`, `completada` |
 | `usuario_id` | UUID | Siempre se toma del token, nunca del cuerpo |
+
+Una tarea está **vencida** cuando su `fecha_vencimiento` ya pasó y su estado no es `completada`. La comparación se hace en PostgreSQL con `NOW()`.
 
 ---
 
@@ -246,10 +249,19 @@ curl -X POST http://localhost:3000/auth/login \
 curl -X POST http://localhost:3000/tasks \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"titulo":"Entregar prueba técnica","fecha_vencimiento":"2026-10-23"}'
+  -d '{"titulo":"Entregar prueba técnica","fecha_vencimiento":"2026-10-23T16:00:00-05:00"}'
 
 # 4. Listar mis tareas pendientes
 curl "http://localhost:3000/tasks?estado=pendiente" -H "Authorization: Bearer <TOKEN>"
+
+# 5. Listar mis tareas vencidas
+curl "http://localhost:3000/tasks?vencidas=true" -H "Authorization: Bearer <TOKEN>"
+
+# 6. Marcar una tarea como completada sin tocar los demás campos
+curl -X PATCH http://localhost:3000/tasks/<ID> \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"estado":"completada"}'
 ```
 
 En Swagger (`/docs`) se puede hacer lo mismo: después del login, pulsa **Authorize** y pega el token.
@@ -304,9 +316,11 @@ Por seguridad, las pruebas se niegan a correr si `DATABASE_URL` de `.env.test` n
 - **El dueño se valida en la misma consulta SQL** (`WHERE id = $1 AND usuario_id = $2`), no en dos pasos "buscar y luego comparar". Es una sola consulta y no hay forma de olvidar la verificación en un endpoint.
 - **`usuario_id` sale solo del token.** Los esquemas usan `additionalProperties: false`, así que enviar `usuario_id` en el cuerpo responde 400.
 - **PUT reemplaza el recurso completo**, como define HTTP. Los campos opcionales que no se envían vuelven a su valor por defecto.
+- **PATCH actualiza solo los campos enviados.** Así, marcar una tarea como completada no obliga a reenviar todo y no se borran campos por olvido. El `UPDATE` se arma con una lista blanca de columnas y consultas parametrizadas.
 - **Mismo mensaje para email inexistente y contraseña incorrecta**, y bcrypt se ejecuta en ambos casos para que el tiempo de respuesta tampoco revele qué emails están registrados.
 - **Contraseñas de 8 a 72 caracteres.** bcrypt ignora en silencio todo lo que pase de 72 bytes.
-- **Las fechas de vencimiento se leen como texto `YYYY-MM-DD`.** Por defecto `pg` las convierte en `Date` a medianoche local, lo que corre la fecha según la zona horaria.
+- **El vencimiento es un momento exacto (`TIMESTAMPTZ`).** Se exige la zona horaria al enviarlo, así PostgreSQL lo guarda como un instante único y el filtro de vencidas funciona igual en cualquier país. Las fechas creadas antes de este cambio se migraron al final de ese día en hora de Colombia.
+- **Las tareas completadas nunca aparecen como vencidas**, aunque su fecha ya haya pasado.
 - **El algoritmo del JWT es fijo (`HS256`) también al verificar**, para rechazar tokens con `alg: none` u otro algoritmo.
 - **Migraciones SQL versionadas** en lugar de crear tablas al arrancar: cada cambio de esquema queda registrado en `schema_migrations`.
 
