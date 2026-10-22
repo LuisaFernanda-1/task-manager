@@ -29,4 +29,5 @@ export interface ReplaceTaskData {
 
 export interface TaskFilters {
   estado?: TaskStatus;
+  vencidas?: boolean;
 }

@@ -1,6 +1,11 @@
 import type { JSONSchemaType } from 'ajv';
-import { TASK_STATUSES, type TaskFilters } from '../../models/task';
+import { TASK_STATUSES, type TaskStatus } from '../../models/task';
 import type { ReplaceTaskInput } from '../../services/task.service';
+
+export interface ListTasksQuery {
+  estado?: TaskStatus;
+  vencidas?: 'true' | 'false';
+}
 
 export const taskBodySchema: JSONSchemaType<ReplaceTaskInput> = {
   type: 'object',
@@ -23,10 +28,11 @@ export const taskIdParamsSchema: JSONSchemaType<{ id: string }> = {
   },
 };
 
-export const listTasksQuerySchema: JSONSchemaType<TaskFilters> = {
+export const listTasksQuerySchema: JSONSchemaType<ListTasksQuery> = {
   type: 'object',
   additionalProperties: false,
   properties: {
     estado: { type: 'string', enum: [...TASK_STATUSES], nullable: true },
+    vencidas: { type: 'string', enum: ['true', 'false'], nullable: true },
   },
 };

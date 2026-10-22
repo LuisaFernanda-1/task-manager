@@ -12,6 +12,9 @@ export interface TaskRepository {
 const TASK_COLUMNS =
   'id, usuario_id, titulo, descripcion, fecha_vencimiento, estado, creado_en, actualizado_en';
 
+const OVERDUE_CONDITION =
+  "(fecha_vencimiento IS NOT NULL AND fecha_vencimiento < NOW() AND estado <> 'completada')";
+
 export class PgTaskRepository implements TaskRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -32,6 +35,10 @@ export class PgTaskRepository implements TaskRepository {
     if (filters.estado) {
       params.push(filters.estado);
       where += ` AND estado = $${params.length}`;
+    }
+
+    if (filters.vencidas !== undefined) {
+      where += filters.vencidas ? ` AND ${OVERDUE_CONDITION}` : ` AND NOT ${OVERDUE_CONDITION}`;
     }
 
     const { rows } = await this.pool.query<Task>(

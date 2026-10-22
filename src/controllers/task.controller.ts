@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { getAuthUser } from '../api/middlewares/authenticate';
+import type { ListTasksQuery } from '../api/schemas/task.schemas';
 import type { CreateTaskData, TaskFilters } from '../models/task';
 import type { ReplaceTaskInput, TaskService } from '../services/task.service';
 
@@ -16,7 +17,10 @@ export class TaskController {
 
   list = async (req: Request, res: Response): Promise<void> => {
     const user = getAuthUser(req);
-    const tasks = await this.tasks.list(user.id, req.query as TaskFilters);
+    const query = req.query as ListTasksQuery;
+    const filters: TaskFilters = { estado: query.estado };
+    if (query.vencidas !== undefined) filters.vencidas = query.vencidas === 'true';
+    const tasks = await this.tasks.list(user.id, filters);
     res.status(200).json(tasks);
   };
 
