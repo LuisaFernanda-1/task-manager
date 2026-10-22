@@ -31,7 +31,7 @@ Construida con **Node.js, Express 5, TypeScript y PostgreSQL**, organizada en ca
 | Base de datos | PostgreSQL 16 con `pg` (consultas SQL parametrizadas) |
 | Autenticación | `bcrypt` para contraseñas y `jsonwebtoken` (HS256) |
 | Validación | AJV + `ajv-formats` con JSON Schema |
-| Documentación | OpenAPI 3 + Swagger UI |
+| Documentación | OpenAPI 3 + Swagger UI y JSDoc |
 | Seguridad HTTP | `helmet` y `cors` |
 | Pruebas | Vitest + Supertest |
 | CI | GitHub Actions |

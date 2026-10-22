@@ -9,7 +9,7 @@
 | 3. Persistencia | Migraciones SQL versionadas, pool de conexiones y repositorios con consultas limitadas al dueño. |
 | 4. Lógica de negocio | Servicios de autenticación (bcrypt + JWT) y de tareas. |
 | 5. Capa HTTP | Middlewares de autenticación, validación (AJV) y errores; controladores y rutas. |
-| 6. Documentación | OpenAPI/Swagger y README. |
+| 6. Documentación | OpenAPI/Swagger, JSDoc y README. |
 | 7. Verificación | Pruebas manuales con `curl` de todos los endpoints, 80 pruebas automatizadas y build de producción. |
 | 8. CI | GitHub Actions ejecuta typecheck, build y pruebas en cada push. |
 | 9. Decisiones propias | Vencimiento con fecha, hora y zona horaria, filtro de tareas vencidas y endpoint PATCH. |
@@ -71,11 +71,11 @@
 
 **Prompt utilizado:**
 
-> Quiero mejorar la estética de la documentación Swagger UI que se sirve en /docs, sin cambiar nada del comportamiento de la API. (1) Un tema visual personalizado, moderno y limpio: paleta en tonos morado/lavanda (luego pedí volver al verde de Swagger), tipografía legible, bordes redondeados, buen espaciado y colores distintos y suaves para cada método HTTP. (2) Ocultar la barra superior verde de Swagger y mostrar un encabezado propio con el nombre "Task Manager API" y una línea corta de descripción. (3) Que se vea bien en modo claro y oscuro (prefers-color-scheme). (4) Título de la pestaña: "Task Manager API · Docs". (5) swaggerOptions: persistAuthorization, displayRequestDuration, docExpansion: "list", filter y tryItOutEnabled. Restricciones: no modificar rutas, controladores, servicios, repositorios, validaciones ni respuestas; CSS y opciones en un archivo nuevo `src/docs/swagger-ui.ts`; nada cargado de internet; ejecutar typecheck y tests; commit atómico y entrada en esta bitácora.
+> Quiero mejorar la estética de la documentación Swagger UI que se sirve en /docs, sin cambiar nada del comportamiento de la API. (1) Un tema visual personalizado, moderno y limpio: paleta en tonos morado/lavanda (luego pedí volver al verde de Swagger), tipografía legible, bordes redondeados, buen espaciado y colores distintos y suaves para cada método HTTP. (2) Ocultar la barra superior verde de Swagger y mostrar un encabezado propio con el nombre "Task Manager API" y una línea corta de descripción. (3) Que se vea bien en modo claro y oscuro (prefers-color-scheme). (4) Título de la pestaña: "Task Manager API · Docs". (5) swaggerOptions: persistAuthorization, displayRequestDuration, docExpansion: "list", filter y tryItOutEnabled. Restricciones: no modificar rutas, controladores, servicios, repositorios, validaciones ni respuestas; CSS y opciones en un archivo nuevo `src/docs/swagger-ui.ts` documentado con JSDoc; nada cargado de internet; ejecutar typecheck y tests; commit atómico y entrada en esta bitácora.
 
 **Qué se cambió:**
 
-- **Nuevo `src/docs/swagger-ui.ts`** con dos exportaciones: `swaggerCustomCss` (el tema) y `swaggerUiOptions` (título de la pestaña, CSS y `swaggerOptions`).
+- **Nuevo `src/docs/swagger-ui.ts`** con dos exportaciones documentadas: `swaggerCustomCss` (el tema) y `swaggerUiOptions` (título de la pestaña, CSS y `swaggerOptions`).
 - **Tema en verde, basado en el logo de Swagger** (`#85ea2d` y `#173647`). La primera versión era lavanda, pero preferí el verde original porque combina con el logo. Los colores son variables CSS en `:root`, redefinidas dentro de `@media (prefers-color-scheme: dark)`: así el modo oscuro solo cambia valores, no reglas. Colores suaves por método: GET azul, POST verde, PUT ámbar, PATCH violeta, DELETE rosa.
 - **Fuentes del sistema** (`system-ui`, `Segoe UI`, `Roboto`…) en lugar de fuentes web: no hay peticiones externas y la página no depende de internet.
 - **Encabezado propio solo con CSS:** se oculta `.topbar` y el título y la descripción se dibujan con pseudo-elementos `::before`. Se descartó inyectar JavaScript (`customJsStr`) porque no hacía falta.
