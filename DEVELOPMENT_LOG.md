@@ -22,7 +22,7 @@
 
 | # | Para qué | Prompt (resumido) |
 | --- | --- | --- |
-| 1 | Generar la base del proyecto | Le compartí el PDF de la prueba técnica y le pedí ayuda para resolverla con buenas prácticas. |
+| 1 | Generar la base del proyecto | Le pasé el PDF de la prueba técnica y le pedí ayuda para comenzar a realizar el proyecto. |
 | 2 | Tema visual de Swagger UI | Un tema propio para `/docs` (verde, con modo claro y oscuro) sin cambiar el comportamiento de la API. |
 | 3 | Implementar mis decisiones de diseño | Vencimiento con fecha, hora y zona horaria, filtro de vencidas y endpoint PATCH. Las decisiones y su razonamiento son míos (ver "Decisiones sin asistencia de IA"). |
 
