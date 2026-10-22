@@ -7,7 +7,7 @@ export interface Task {
   usuario_id: string;
   titulo: string;
   descripcion: string | null;
-  fecha_vencimiento: string | null;
+  fecha_vencimiento: Date | null;
   estado: TaskStatus;
   creado_en: Date;
   actualizado_en: Date;

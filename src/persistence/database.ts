@@ -1,10 +1,5 @@
-import { Pool, types } from 'pg';
+import { Pool } from 'pg';
 import { Config } from '../config/env';
-
-const PG_DATE_OID = 1082;
-
-// DATE como texto YYYY-MM-DD, sin conversión de zona horaria
-types.setTypeParser(PG_DATE_OID, (value: string) => value);
 
 let pool: Pool | null = null;
 

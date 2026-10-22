@@ -56,25 +56,25 @@ describe('CRUD de tareas', () => {
   });
 
   it('POST /tasks crea una tarea con estado "pendiente" por defecto', async () => {
-    const task = await createTask(token, { titulo: 'Entregar prueba', fecha_vencimiento: '2026-10-23' });
+    const task = await createTask(token, { titulo: 'Entregar prueba', fecha_vencimiento: '2026-10-23T16:00:00-05:00' });
     expect(task).toMatchObject({
       titulo: 'Entregar prueba',
       descripcion: null,
-      fecha_vencimiento: '2026-10-23',
+      fecha_vencimiento: '2026-10-23T21:00:00.000Z',
       estado: 'pendiente',
     });
   });
 
-  it('POST /tasks conserva la fecha exacta sin desfase de zona horaria', async () => {
-    const task = await createTask(token, { titulo: 'Fin de año', fecha_vencimiento: '2026-12-31' });
-    expect(task.fecha_vencimiento).toBe('2026-12-31');
+  it('POST /tasks devuelve la fecha de vencimiento en UTC', async () => {
+    const task = await createTask(token, { titulo: 'Fin de año', fecha_vencimiento: '2026-12-31T23:59:59-05:00' });
+    expect(task.fecha_vencimiento).toBe('2027-01-01T04:59:59.000Z');
   });
 
   it('POST /tasks responde 400 con estado o fecha inválidos', async () => {
     const res = await request(app)
       .post('/tasks')
       .set('Authorization', `Bearer ${token}`)
-      .send({ titulo: 'x', estado: 'terminada', fecha_vencimiento: '2026-02-30' })
+      .send({ titulo: 'x', estado: 'terminada', fecha_vencimiento: '2026-02-30T10:00:00Z' })
       .expect(400);
     const fields = res.body.error.details.map((d: { field: string }) => d.field);
     expect(fields).toEqual(expect.arrayContaining(['body.estado', 'body.fecha_vencimiento']));
@@ -94,8 +94,8 @@ describe('CRUD de tareas', () => {
 
   it('GET /tasks lista las tareas ordenadas por fecha de vencimiento', async () => {
     await createTask(token, { titulo: 'Sin fecha' });
-    await createTask(token, { titulo: 'Después', fecha_vencimiento: '2026-12-01' });
-    await createTask(token, { titulo: 'Antes', fecha_vencimiento: '2026-11-01' });
+    await createTask(token, { titulo: 'Después', fecha_vencimiento: '2026-12-01T12:00:00Z' });
+    await createTask(token, { titulo: 'Antes', fecha_vencimiento: '2026-11-01T12:00:00Z' });
 
     const res = await request(app).get('/tasks').set('Authorization', `Bearer ${token}`).expect(200);
     expect(res.body.map((t: { titulo: string }) => t.titulo)).toEqual(['Antes', 'Después', 'Sin fecha']);
@@ -125,7 +125,7 @@ describe('CRUD de tareas', () => {
   });
 
   it('PUT /tasks/:id reemplaza la tarea y actualiza "actualizado_en"', async () => {
-    const task = await createTask(token, { titulo: 'Original', descripcion: 'desc', fecha_vencimiento: '2026-11-01' });
+    const task = await createTask(token, { titulo: 'Original', descripcion: 'desc', fecha_vencimiento: '2026-11-01T12:00:00Z' });
     const res = await request(app)
       .put(`/tasks/${task.id}`)
       .set('Authorization', `Bearer ${token}`)

@@ -4,7 +4,7 @@ import type { RequestHandler } from 'express';
 import { ValidationError, type ValidationIssue } from '../../errors';
 
 const ajv = new Ajv({ allErrors: true, coerceTypes: false, strict: true });
-addFormats(ajv, ['email', 'date', 'uuid']);
+addFormats(ajv, ['email', 'date', 'date-time', 'uuid']);
 
 type RequestPart = 'body' | 'params' | 'query';
 
@@ -67,6 +67,8 @@ function formatMessage(format: string): string {
   const messages: Record<string, string> = {
     email: 'Debe ser un email válido',
     date: 'Debe ser una fecha válida con formato YYYY-MM-DD',
+    'date-time':
+      'Debe ser una fecha y hora ISO 8601 con zona horaria, por ejemplo 2026-10-23T16:00:00-05:00',
     uuid: 'Debe ser un UUID válido',
   };
   return messages[format] ?? `Debe tener formato ${format}`;

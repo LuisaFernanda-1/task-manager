@@ -9,7 +9,7 @@ export const taskBodySchema: JSONSchemaType<ReplaceTaskInput> = {
   properties: {
     titulo: { type: 'string', minLength: 1, maxLength: 150, pattern: '\\S' },
     descripcion: { type: 'string', maxLength: 2000, nullable: true },
-    fecha_vencimiento: { type: 'string', format: 'date', nullable: true },
+    fecha_vencimiento: { type: 'string', format: 'date-time', nullable: true },
     estado: { type: 'string', enum: [...TASK_STATUSES], nullable: true },
   },
 };
